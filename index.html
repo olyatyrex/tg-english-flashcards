@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>English Flashcards</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --accent: #e8c547;
+    --accent2: #4fd1c5;
+    --text: #f0f0f2;
+    --muted: #7a7a85;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --card-h: 380px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .streak {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--yellow);
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    padding: 14px 20px 0;
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── CARD AREA ── */
+  .card-area {
+    padding: 20px;
+    perspective: 1000px;
+  }
+
+  .card-wrapper {
+    position: relative;
+    width: 100%;
+    height: var(--card-h);
+  }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .card.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 24px 22px;
+    border: 1px solid var(--border);
+  }
+
+  .card-front {
+    background: var(--surface);
+    background-image: radial-gradient(ellipse at top left, rgba(232,197,71,0.06) 0%, transparent 60%);
+  }
+
+  .card-back {
+    background: var(--surface);
+    background-image: radial-gradient(ellipse at bottom right, rgba(79,209,197,0.07) 0%, transparent 60%);
+    transform: rotateY(180deg);
+  }
+
+  .card-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .card-expression {
+    font-family: 'Instrument Serif', serif;
+    font-size: 34px;
+    line-height: 1.2;
+    color: var(--text);
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .card-hint {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .tap-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.5;
+  }
+
+  /* back face */
+  .card-translation {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    font-style: italic;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  .card-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 16px;
+  }
+
+  .card-example-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card-example {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #c8c8d0;
+  }
+
+  .card-example em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .card-etymology {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .card-back-inner {
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── BUTTONS ── */
+  .actions {
+    padding: 0 20px 16px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px 10px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .btn:active { transform: scale(0.95); opacity: 0.85; }
+
+  .btn-again {
+    background: rgba(248,113,113,0.12);
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,0.2);
+  }
+  .btn-hard {
+    background: rgba(251,191,36,0.10);
+    color: var(--yellow);
+    border: 1px solid rgba(251,191,36,0.2);
+  }
+  .btn-good {
+    background: rgba(74,222,128,0.10);
+    color: var(--green);
+    border: 1px solid rgba(74,222,128,0.2);
+  }
+  .btn-easy {
+    background: rgba(79,209,197,0.10);
+    color: var(--accent2);
+    border: 1px solid rgba(79,209,197,0.2);
+  }
+
+  .btn-label { font-size: 11px; font-weight: 400; opacity: 0.7; }
+
+  .actions-hidden { display: none; }
+
+  /* ── DONE SCREEN ── */
+  .done-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .done-screen.visible { display: flex; }
+
+  .done-emoji {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: bounceIn 0.5s ease;
+  }
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .done-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .done-sub {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 32px;
+    max-width: 280px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    font-weight: 400;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+  .btn-restart {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #0d0d0f;
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s, filter 0.12s;
+  }
+  .btn-restart:active { transform: scale(0.97); filter: brightness(0.9); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-top: 1px solid var(--border);
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: rgba(13,13,15,0.95);
+    backdrop-filter: blur(10px);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .tab.active { color: var(--accent); }
+  .tab-icon { font-size: 20px; }
+
+  .main-content { padding-bottom: 140px; }
+
+  /* swipe hint anim */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card-area { animation: fadeSlideUp 0.35s ease; }
+
+  /* shake on answer */
+  @keyframes slideLeft {
+    0%   { transform: translateX(0) rotate(0); opacity: 1; }
+    100% { transform: translateX(-110%) rotate(-8deg); opacity: 0; }
+  }
+  @keyframes slideRight {
+    0%   { transform: translateX(0) rotate(0); opacity: 1; }
+    100% { transform: translateX(110%) rotate(8deg); opacity: 0; }
+  }
+  .exit-left  { animation: slideLeft  0.3s ease forwards; }
+  .exit-right { animation: slideRight 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="main-content" id="mainContent">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Expressions</div>
+    <div class="streak">🔥 <span id="streakCount">5</span> дней</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-row">
+      <span id="progressText">1 из 6</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="card-area" id="cardArea">
+    <div class="card-wrapper">
+      <div class="card" id="card" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="card-tag">Выражение</div>
+          <div class="card-expression" id="expression">—</div>
+          <div class="card-hint">
+            <svg class="tap-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3-3m0 0l3 3m-3-3v8"/><circle cx="12" cy="12" r="10"/></svg>
+            Нажми, чтобы перевернуть
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-tag">Перевод</div>
+          <div class="card-translation" id="translation">—</div>
+          <div class="card-divider"></div>
+          <div class="card-back-inner">
+            <div class="card-example-label">Пример</div>
+            <div class="card-example" id="example">—</div>
+            <div class="card-etymology" id="etymology" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="actions actions-hidden" id="actions">
+    <button class="btn btn-again"  onclick="answer('again')">😵<span class="btn-label">Снова</span></button>
+    <button class="btn btn-hard"   onclick="answer('hard')">😬<span class="btn-label">Сложно</span></button>
+    <button class="btn btn-good"   onclick="answer('good')">😊<span class="btn-label">Хорошо</span></button>
+    <button class="btn btn-easy"   onclick="answer('easy')">🚀<span class="btn-label">Легко</span></button>
+  </div>
+
+  <!-- Done screen -->
+  <div class="done-screen" id="doneScreen">
+    <div class="done-emoji">🎉</div>
+    <div class="done-title">Готово!</div>
+    <div class="done-sub">Ты прошёл все карточки на сегодня. Отличная работа!</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="statAgain" style="color:var(--red)">0</div>
+        <div class="stat-label">Снова</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statHard" style="color:var(--yellow)">0</div>
+        <div class="stat-label">Сложно</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statGood" style="color:var(--green)">0</div>
+        <div class="stat-label">Хорошо</div>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restart()">Повторить ещё раз</button>
+  </div>
+</div>
+
+<!-- ALL WORDS screen -->
+<div id="screenWords" style="display:none; padding-bottom:80px;">
+  <div class="header">
+    <div class="logo">Все слова</div>
+    <div class="streak">🃏 <span id="totalCount">0</span></div>
+  </div>
+  <div id="wordsList" style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;"></div>
+</div>
+
+<!-- PROGRESS screen -->
+<div id="screenProgress" style="display:none; padding-bottom:80px;">
+  <div class="header">
+    <div class="logo">Прогресс</div>
+  </div>
+  <div style="padding:16px 20px; display:flex; flex-direction:column; gap:12px;">
+    <div class="stat-card" style="flex-direction:row; justify-content:space-between; padding:18px 20px;">
+      <span style="font-size:15px; color:var(--muted)">🔥 Стрик</span>
+      <span style="font-family:'Instrument Serif',serif; font-size:24px; color:var(--yellow)" id="pStreak">0</span>
+    </div>
+    <div class="stat-card" style="flex-direction:row; justify-content:space-between; padding:18px 20px;">
+      <span style="font-size:15px; color:var(--muted)">✅ Выучено</span>
+      <span style="font-family:'Instrument Serif',serif; font-size:24px; color:var(--green)" id="pLearned">0</span>
+    </div>
+    <div class="stat-card" style="flex-direction:row; justify-content:space-between; padding:18px 20px;">
+      <span style="font-size:15px; color:var(--muted)">📅 На сегодня</span>
+      <span style="font-family:'Instrument Serif',serif; font-size:24px; color:var(--accent)" id="pDue">0</span>
+    </div>
+    <div class="stat-card" style="flex-direction:row; justify-content:space-between; padding:18px 20px;">
+      <span style="font-size:15px; color:var(--muted)">📚 Всего слов</span>
+      <span style="font-family:'Instrument Serif',serif; font-size:24px; color:var(--text)" id="pTotal">0</span>
+    </div>
+    <div style="margin-top:8px;">
+      <div style="font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">По карточкам</div>
+      <div id="progressList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" id="tab0" onclick="switchTab(0)"><div class="tab-icon">🃏</div>Карточки</div>
+  <div class="tab" id="tab1" onclick="switchTab(1)"><div class="tab-icon">📚</div>Все слова</div>
+  <div class="tab" id="tab2" onclick="switchTab(2)"><div class="tab-icon">📊</div>Прогресс</div>
+</div>
+
+<script>
+// ── Cards data ──
+const cards = [
+  { id: 'make-eye-contact', expression: "Make eye contact", translation: "Смотреть в глаза (кому-то)", example: "He's very shy and never <em>makes eye contact</em>." },
+  { id: 'long-shot', expression: "Long shot", translation: "Маловероятное событие; рискованная попытка", example: "Getting that job without any experience is a <em>long shot</em>, but you never know until you try." },
+  { id: 'come-up-short', expression: "Come up short", translation: "Потерпеть неудачу, не достичь цели, немного «не дотянуть»", example: "We tried to raise enough money for the trip but <em>came up short</em> by just fifty dollars." },
+  { id: 'ill-at-ease', expression: "Ill at ease", translation: "Чувствовать себя неловко, некомфортно, напряжённо", example: "He looked <em>ill at ease</em> during the fancy dinner, like he wasn't sure which fork to use." },
+  { id: 'go-getter', expression: "Go-getter", translation: "Активный, целеустремлённый человек, который добивается своего", example: "She's such a <em>go-getter</em> — when she wants something, she makes it happen." },
+  { id: 'way-with-words', expression: "Have a way with words", translation: "Уметь красиво и убедительно говорить или писать", example: "She really <em>has a way with words</em> — even her emails sound like poetry." },
+  { id: 'long-in-tooth', expression: "Long in the tooth", translation: "Староват; уже не так молод или свеж, как раньше", example: "That old laptop is getting a bit <em>long in the tooth</em> — it takes ten minutes just to open a browser." },
+  { id: 'also-ran', expression: "Also-ran", translation: "Участник, который не занял заметного места; «один из многих»", example: "The startup pitched their idea, but it ended up as just an <em>also-ran</em> among dozens of others.", etymology: "Из скачек: победителей называли по именам, остальных записывали строкой also ran — «тоже бежал»." },
+  { id: 'dead-ringer', expression: "Dead ringer", translation: "Человек или вещь, очень похожая на кого-то/что-то; «вылитый», «один в один»", example: "She's a <em>dead ringer</em> for her grandmother in that old photo — same smile and everything." },
+  { id: 'cut-to-chase', expression: "Cut to the chase", translation: "Перейти сразу к сути, без лишних подробностей", example: "I don't have much time, so let's <em>cut to the chase</em> — what's the main point?", etymology: "Фраза пришла из раннего Голливуда. В немых фильмах были длинные сцены разговоров, а зрители ждали погони. Режиссёры говорили: «Cut to the chase» — перейдём сразу к самому интересному." },
+  { id: 'sweet-spot', expression: "Sweet spot", translation: "Идеальное сочетание условий; точка, где что-то работает лучше всего", example: "This café is the <em>sweet spot</em>: good coffee, quiet music, and plenty of outlets." },
+  { id: 'coming-of-age', expression: "Coming of age", translation: "Процесс взросления; момент перехода к взрослому состоянию", example: "The movie is a <em>coming-of-age</em> story about a teen who learns to stand up for herself." },
+  { id: 'hijack-conversation', expression: "Hijack the conversation", translation: "Перебить и перехватить разговор, увести тему в свою сторону", example: "Every time someone mentions travel, he <em>hijacks the conversation</em> and starts talking about his trip to Japan." },
+  { id: 'hold-space', expression: "Hold the space", translation: "Поддерживать человека эмоционально, просто присутствуя рядом, не давая советов", example: "She didn't need solutions — she just needed someone to <em>hold the space</em> while she talked through her worries." },
+  { id: 'knee-jerk', expression: "Knee-jerk reaction", translation: "Импульсивная, автоматическая реакция", example: "When the glass slipped, my <em>knee-jerk reaction</em> was to shout, even though no one was hurt.", etymology: "Выражение пришло из медицины, где оно означает «коленный рефлекс» — автоматический отклик без участия сознания." },
+  { id: 'cut-out-for', expression: "Be cut out for something", translation: "Подходить для какого-то дела, иметь нужные качества", example: "She realized she wasn't <em>cut out for</em> office work and decided to become a photographer instead." },
+  { id: 'poster-child', expression: "Poster child", translation: "Яркий представитель чего-то; символ определённого явления или качества", example: "He is like the <em>poster child</em> for procrastination — he even delayed writing his resolutions until March.", etymology: "Изначально — ребёнок с благотворительного постера, «лицо кампании». Позже стало означать любого, кто идеально олицетворяет какое-то явление." },
+  { id: 'heart-of-matter', expression: "Get to the heart of the matter", translation: "Перейти к сути", example: "We've been talking around it for an hour. Can we just <em>get to the heart of the matter</em>?" },
+  { id: 'break-silence', expression: "Break the silence", translation: "Нарушить тишину, начать говорить после паузы или неловкого молчания", example: "After a few minutes of awkward quiet, she finally <em>broke the silence</em> with a joke." },
+  { id: 'help-yourself', expression: "Help yourself", translation: "Угощаться, брать самому", example: "There's plenty of food, so <em>help yourself</em>. Help yourself to cookies — угощайтесь печеньем." },
+  { id: 'pr-stunt', expression: "PR stunt", translation: "Пиар-ход; показная акция ради внимания, а не реальной пользы", example: "Many people saw the charity event as just a <em>PR stunt</em> to improve the brand's image." },
+  { id: 'connect-dots', expression: "Connect the dots", translation: "Связать всё воедино, понять ситуацию", example: "Once I started to <em>connect the dots</em>, I realized I probably wasn't getting the job." },
+  { id: 'in-the-know', expression: "Be in the know", translation: "Быть в теме, быть в курсе", example: "This resort is considered by those who are <em>in the know</em> to have the best skiing in Europe." },
+  { id: 'make-living', expression: "Make a living", translation: "Зарабатывать на жизнь", example: "Everyone has to <em>make a living</em>." },
+  { id: 'tie-knot', expression: "Tie the knot", translation: "Пожениться, вступить в брак", example: "After ten years together, they finally decided to <em>tie the knot</em>.", etymology: "Выражение связано со старинными свадебными обрядами, где руки пары связывали лентой или тканью — как символ союза." },
+  { id: 'dyed-in-wool', expression: "Dyed-in-the-wool", translation: "Убеждённый, закоренелый; человек, чьи взгляды очень трудно изменить", example: "He's a <em>dyed-in-the-wool</em> coffee lover — he refuses to start the day without it.", etymology: "Из текстильного производства: шерсть, окрашенная до прядения, держит цвет особенно стойко — отсюда метафора неизменных убеждений." },
+  { id: 'go-haywire', expression: "Go haywire", translation: "Выйти из-под контроля, начать работать неправильно или хаотично", example: "When the system update failed, the whole website <em>went haywire</em>.", etymology: "Из телеграфии XIX века: спутанные провода приводили к хаотичной передаче сигналов." },
+  { id: 'rallying-cry', expression: "Rallying cry", translation: "Призыв к действию; лозунг, который объединяет людей", example: "\"Let's finish this today!\" became the team's <em>rallying cry</em> during the final hours of the project.", etymology: "Из военного контекста: крик, которым солдаты собирали и подбадривали друг друга в бою." },
+  { id: 'hot-take', expression: "Hot take", translation: "Неожиданное, часто спорное мнение, высказанное быстро и без долгих раздумий", example: "<em>Hot take</em>: most productivity apps just make people feel busy, not actually productive." },
+  { id: 'pull-punches', expression: "Pull your punches", translation: "Сдерживаться, смягчать критику, не действовать в полную силу", example: "He didn't <em>pull his punches</em> during the debate — his criticism was direct and harsh.", etymology: "Выражение пришло из бокса — намеренно ослаблять удар, чтобы не причинить сопернику вреда." },
+  { id: 'on-a-whim', expression: "On a whim", translation: "Спонтанно, по внезапному желанию, без плана", example: "<em>On a whim</em>, she booked a ticket and flew to Italy the next day." },
+  { id: 'jump-scare', expression: "Jump scare", translation: "Резкий пугающий момент в фильмах или играх, когда что-то неожиданно появляется", example: "The movie was full of cheap <em>jump scares</em> that made everyone in the theater scream." },
+];
+
+// ── localStorage helpers ──
+const STORAGE_KEY = 'expressions_progress';
+
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveProgress(progress) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  } catch {}
+}
+
+// progress shape per card:
+// { interval: days, easeFactor: 2.5, dueDate: 'YYYY-MM-DD', reps: 0 }
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isDue(cardProgress) {
+  if (!cardProgress || !cardProgress.dueDate) return true;
+  return cardProgress.dueDate <= todayStr();
+}
+
+// SM-2 lite: update interval based on rating
+function sm2Update(prog, rating) {
+  const ef = prog.easeFactor || 2.5;
+  const reps = prog.reps || 0;
+  const q = { again: 0, hard: 2, good: 4, easy: 5 }[rating];
+
+  let newInterval, newEf, newReps;
+
+  if (q < 3) {
+    // reset
+    newInterval = 1;
+    newReps = 0;
+    newEf = Math.max(1.3, ef - 0.2);
+  } else {
+    newReps = reps + 1;
+    if (newReps === 1) newInterval = 1;
+    else if (newReps === 2) newInterval = 3;
+    else newInterval = Math.round((prog.interval || 1) * ef);
+    newEf = Math.max(1.3, ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+  }
+
+  const due = new Date();
+  due.setDate(due.getDate() + newInterval);
+
+  return {
+    interval: newInterval,
+    easeFactor: newEf,
+    dueDate: due.toISOString().slice(0, 10),
+    reps: newReps,
+    lastRating: rating,
+    lastSeen: todayStr()
+  };
+}
+
+// ── Streak ──
+function updateStreak() {
+  const key = 'expressions_streak';
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(key)) || {}; } catch {}
+
+  const today = todayStr();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0, 10);
+
+  if (s.lastDate === today) {
+    // already counted today
+  } else if (s.lastDate === yStr) {
+    s.count = (s.count || 0) + 1;
+    s.lastDate = today;
+  } else {
+    s.count = 1;
+    s.lastDate = today;
+  }
+  try { localStorage.setItem(key, JSON.stringify(s)); } catch {}
+  return s.count || 1;
+}
+
+// ── App state ──
+let progress = loadProgress();
+let sessionQueue = cards.filter(c => isDue(progress[c.id]));
+// если все выучены — показываем все равно (для демо)
+if (sessionQueue.length === 0) sessionQueue = [...cards];
+
+let idx = 0;
+let isFlipped = false;
+const stats = { again: 0, hard: 0, good: 0, easy: 0 };
+
+// Telegram WebApp init
+if (window.Telegram?.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+
+// Show streak
+document.getElementById('streakCount').textContent = updateStreak();
+
+function renderCard() {
+  const c = sessionQueue[idx];
+  document.getElementById('expression').textContent = c.expression;
+  document.getElementById('translation').textContent = c.translation;
+  document.getElementById('example').innerHTML = c.example;
+  const etEl = document.getElementById('etymology');
+  if (c.etymology) {
+    etEl.textContent = c.etymology;
+    etEl.style.display = '';
+  } else {
+    etEl.style.display = 'none';
+  }
+
+  const pct = Math.round((idx / sessionQueue.length) * 100);
+  document.getElementById('progressText').textContent = `${idx + 1} из ${sessionQueue.length}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  isFlipped = false;
+  const card = document.getElementById('card');
+  card.classList.remove('flipped', 'exit-left', 'exit-right');
+  document.getElementById('actions').classList.add('actions-hidden');
+}
+
+function flipCard() {
+  if (isFlipped) return;
+  isFlipped = true;
+  document.getElementById('card').classList.add('flipped');
+  setTimeout(() => {
+    document.getElementById('actions').classList.remove('actions-hidden');
+  }, 300);
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  }
+}
+
+function answer(rating) {
+  stats[rating]++;
+
+  // Save SM-2 progress
+  const card = sessionQueue[idx];
+  progress[card.id] = sm2Update(progress[card.id] || {}, rating);
+  saveProgress(progress);
+
+  if (window.Telegram?.WebApp?.HapticFeedback) {
+    Telegram.WebApp.HapticFeedback.impactOccurred(rating === 'again' ? 'medium' : 'light');
+  }
+
+  const cardEl = document.getElementById('card');
+  const exitClass = (rating === 'again' || rating === 'hard') ? 'exit-left' : 'exit-right';
+  cardEl.classList.add(exitClass);
+
+  setTimeout(() => {
+    // "again" cards go back to the end of queue
+    if (rating === 'again') sessionQueue.push(card);
+
+    idx++;
+    if (idx >= sessionQueue.length) {
+      showDone();
+    } else {
+      renderCard();
+    }
+  }, 280);
+}
+
+function showDone() {
+  document.getElementById('cardArea').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('actions').style.display = 'none';
+  document.getElementById('statAgain').textContent = stats.again;
+  document.getElementById('statHard').textContent = stats.hard;
+  document.getElementById('statGood').textContent = stats.good + stats.easy;
+  document.getElementById('doneScreen').classList.add('visible');
+}
+
+function restart() {
+  idx = 0;
+  stats.again = stats.hard = stats.good = stats.easy = 0;
+  sessionQueue = cards.filter(c => isDue(progress[c.id]));
+  if (sessionQueue.length === 0) sessionQueue = [...cards];
+  document.getElementById('cardArea').style.display = '';
+  document.getElementById('progressWrap').style.display = '';
+  document.getElementById('doneScreen').classList.remove('visible');
+  renderCard();
+}
+
+// ── Touch swipe support ──
+let touchStartX = 0;
+document.getElementById('card').addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.getElementById('card').addEventListener('touchend', e => {
+  if (!isFlipped) { flipCard(); return; }
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 60) {
+    answer(dx > 0 ? 'easy' : 'again');
+  }
+}, { passive: true });
+
+// ── Tab switching ──
+function switchTab(n) {
+  document.getElementById('mainContent').style.display = n === 0 ? '' : 'none';
+  document.getElementById('screenWords').style.display = n === 1 ? '' : 'none';
+  document.getElementById('screenProgress').style.display = n === 2 ? '' : 'none';
+  [0,1,2].forEach(i => document.getElementById('tab'+i).classList.toggle('active', i === n));
+  if (n === 1) renderWords();
+  if (n === 2) renderProgressScreen();
+}
+
+function ratingLabel(r) {
+  return { again:'Снова', hard:'Сложно', good:'Хорошо', easy:'Легко' }[r] || '—';
+}
+function ratingColor(r) {
+  return { again:'var(--red)', hard:'var(--yellow)', good:'var(--green)', easy:'var(--accent2)' }[r] || 'var(--muted)';
+}
+
+function renderWords() {
+  const list = document.getElementById('wordsList');
+  document.getElementById('totalCount').textContent = cards.length + ' карточек';
+  list.innerHTML = cards.map(c => {
+    const p = progress[c.id];
+    const badge = p
+      ? `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:${ratingColor(p.lastRating)}22;color:${ratingColor(p.lastRating)}">${ratingLabel(p.lastRating)}</span>`
+      : `<span style="font-size:11px;padding:3px 8px;border-radius:10px;background:var(--surface2);color:var(--muted)">Новое</span>`;
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="font-family:'Instrument Serif',serif;font-size:18px;line-height:1.3">${c.expression}</div>
+        ${badge}
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">${c.translation}</div>
+      ${p ? `<div style="font-size:11px;color:var(--muted);opacity:0.5;margin-top:6px;">Следующий повтор: ${p.dueDate}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderProgressScreen() {
+  const streakData = (() => { try { return JSON.parse(localStorage.getItem('expressions_streak')) || {}; } catch { return {}; } })();
+  document.getElementById('pStreak').textContent = (streakData.count || 1) + ' дн.';
+  const learned = cards.filter(c => progress[c.id] && (progress[c.id].reps || 0) >= 2).length;
+  const due = cards.filter(c => isDue(progress[c.id])).length;
+  document.getElementById('pLearned').textContent = learned;
+  document.getElementById('pDue').textContent = due;
+  document.getElementById('pTotal').textContent = cards.length;
+
+  document.getElementById('progressList').innerHTML = cards.map(c => {
+    const p = progress[c.id];
+    const reps = p ? (p.reps || 0) : 0;
+    const pct = Math.min(100, Math.round((reps / 5) * 100));
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:14px;">${c.expression}</span>
+        <span style="font-size:12px;color:var(--muted)">${reps} повт.</span>
+      </div>
+      <div style="height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:4px;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+renderCard();
+</script>
+</body>
+</html>
